@@ -2,7 +2,7 @@ name: Lunch Menu
 
 on:
   schedule:
-    - cron: "*/1 * * * *"
+    - cron: "8 2 * * 1-5"
   workflow_dispatch:
 
 jobs:
