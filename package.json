@@ -1,0 +1,12 @@
+{
+  "name": "snu-menu-slack-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "menu:dry-run:lunch": "node --env-file=.env src/run.js --meal=lunch --dry-run --force",
+    "menu:dry-run:dinner": "node --env-file=.env src/run.js --meal=dinner --dry-run --force",
+    "menu:post:lunch": "node --env-file=.env src/run.js --meal=lunch",
+    "menu:post:dinner": "node --env-file=.env src/run.js --meal=dinner"
+  }
+}
