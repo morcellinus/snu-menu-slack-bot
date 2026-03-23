@@ -119,16 +119,28 @@ export async function fetchDailySnuMenus() {
 
   const html = await response.text();
   const text = normalizeHtmlToText(html);
-  const hall302Block = extractBlock(text, /302동식당\s*\([^)]+\)/, /301동식당\s*\([^)]+\)/);
+  const hall302Block = extractBlock(
+    text,
+    /302동식당\s*\([^)]+\)/,
+    /301동식당\s*\([^)]+\)|\*?\s*버거운버거\s*\([^)]+\)|$/
+  );
   const hall301Block = extractBlock(text, /301동식당\s*\([^)]+\)/, /\*?\s*버거운버거\s*\([^)]+\)|$/);
 
-  if (!hall302Block || !hall301Block) {
-    throw new Error('Could not locate 301/302 menu blocks on the SNU menu page.');
+  if (!hall302Block) {
+    throw new Error('Could not locate the 302 menu block on the SNU menu page.');
   }
 
   return {
     lunch: {
-      hall301: parse301Sections(hall301Block),
+      hall301: hall301Block
+        ? parse301Sections(hall301Block)
+        : [
+            {
+              title: '301동 식사',
+              items: ['오늘 원본 페이지에 301동 메뉴가 표시되지 않았습니다.'],
+              notes: []
+            }
+          ],
       hall302: parse302Section(hall302Block, 0)
     },
     dinner: {
