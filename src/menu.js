@@ -2,6 +2,39 @@ const SNU_MENU_URL = 'https://snuco.snu.ac.kr/foodmenu/';
 const KOREA_TIME_ZONE = 'Asia/Seoul';
 const HOLIDAY_API_BASE_URL = 'https://date.nager.at/api/v3';
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function formatFetchError(url, error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const cause = error && typeof error === 'object' ? error.cause : undefined;
+  const causeCode = cause && typeof cause === 'object' && 'code' in cause ? cause.code : undefined;
+  const causeHost = cause && typeof cause === 'object' && 'hostname' in cause ? cause.hostname : undefined;
+  const causeDetail = causeCode ? ` (${causeCode}${causeHost ? ` @ ${causeHost}` : ''})` : '';
+  return `Network fetch failed for ${url}${causeDetail}: ${message}`;
+}
+
+async function fetchWithRetry(url, options = {}, retries = 2) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      return await fetch(url, options);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === retries) {
+        throw new Error(formatFetchError(url, error));
+      }
+
+      await sleep(500 * (attempt + 1));
+    }
+  }
+
+  throw lastError;
+}
+
 function decodeHtmlEntities(value) {
   return value
     .replace(/&nbsp;/gi, ' ')
@@ -112,7 +145,7 @@ function parse301Sections(block) {
 }
 
 export async function fetchDailySnuMenus() {
-  const response = await fetch(SNU_MENU_URL);
+  const response = await fetchWithRetry(SNU_MENU_URL);
   if (!response.ok) {
     throw new Error(`Failed to fetch SNU menu page: ${response.status}`);
   }
@@ -194,7 +227,7 @@ export async function isKoreanBusinessDay(now = new Date()) {
   }
 
   const { year, isoDate } = koreaDateParts(now);
-  const response = await fetch(`${HOLIDAY_API_BASE_URL}/PublicHolidays/${year}/KR`);
+  const response = await fetchWithRetry(`${HOLIDAY_API_BASE_URL}/PublicHolidays/${year}/KR`);
   if (!response.ok) {
     throw new Error(`Failed to fetch Korean public holidays: ${response.status}`);
   }
